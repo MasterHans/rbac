@@ -2,14 +2,13 @@
 
 namespace app\controllers;
 
-use app\models\Article;
 use Yii;
-use yii\db\ActiveRecord;
 use yii\filters\AccessControl;
-use yii\helpers\VarDumper;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
+use app\models\LoginForm;
+use app\models\ContactForm;
 
 class SiteController extends Controller
 {
@@ -65,65 +64,65 @@ class SiteController extends Controller
         return $this->render('index');
     }
 
+    /**
+     * Login action.
+     *
+     * @return Response|string
+     */
+    public function actionLogin()
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->goHome();
+        }
+
+        $model = new LoginForm();
+        if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            return $this->goBack();
+        }
+
+        $model->password = '';
+        return $this->render('login', [
+            'model' => $model,
+        ]);
+    }
 
     /**
-     * Displays homepage.
+     * Logout action.
+     *
+     * @return Response
+     */
+    public function actionLogout()
+    {
+        Yii::$app->user->logout();
+
+        return $this->goHome();
+    }
+
+    /**
+     * Displays contact page.
+     *
+     * @return Response|string
+     */
+    public function actionContact()
+    {
+        $model = new ContactForm();
+        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
+            Yii::$app->session->setFlash('contactFormSubmitted');
+
+            return $this->refresh();
+        }
+        return $this->render('contact', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Displays about page.
      *
      * @return string
      */
-    public function actionTest()
+    public function actionAbout()
     {
-        $article = new Article();
-
-        $article->name = 'День Святого Валентина приближается ? Вот дерьмо!Я забыл снова завести девушку!';
-        $article->description = 'Бендер злится на Фрая за то, что он встречается с роботом. Держись подальше от наших женщин. У тебя металлическая лихорадка, парень. Лихорадка металла';
-
-        // $event - объект класса yii\base\Event или дочернего класса
-        $article->on(ActiveRecord::EVENT_AFTER_INSERT, function ($event) {
-            $followers = ['john2@teleworm.us',
-                'shivawhite@cuvox.de',
-                'kate@dayrep.com'
-            ];
-
-            foreach ($followers as $follower) {
-                Yii::$app->mailer->compose()
-                    ->setFrom('techblog@teleworm.us')
-                    ->setTo($follower)
-                    ->setSubject($event->sender->name)
-                    ->setTextBody($event->sender->description)
-                    ->send();
-            }
-            \yii\helpers\VarDumper::dump('Email sent successfuly!', 10, true);
-        });
-        if (!$article->save()) {
-            echo VarDumper::dumpAsString($article->getErrors());
-        };
+        return $this->render('about');
     }
-
-    public function actionTestNew()
-    {
-        $article = new Article();
-        $article->name = 'Valentine\'s Day\'s coming? Aw crap! I forgot to get a girlfriend again!';
-        $article->description = 'Bender is angry at Fry for dating a robot. Stay away from our women. You\'ve got metal fever, boy . Metal fever';
-        // $event is an object of yii\base\Event or a child class
-        $article->on(Article::EVENT_OUR_CUSTOM_EVENT, function ($event) {
-            $followers = ['john2@teleworm.us',
-                'shivawhite@cuvox.de',
-                'kate@dayrep.com'];
-            foreach ($followers as $follower) {
-                Yii::$app->mailer->compose()
-                    ->setFrom('techblog@teleworm.us')
-                    ->setTo($follower)
-                    ->setSubject($event->sender->name)
-                    ->setTextBody($event->sender->description)
-                    ->send();
-            }
-            echo 'Emails have been sent';
-        });
-        if ($article->save()) {
-            $article->trigger(Article::EVENT_OUR_CUSTOM_EVENT);
-        }
-    }
-
-
 }

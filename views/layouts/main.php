@@ -39,8 +39,20 @@ AppAsset::register($this);
         'options' => ['class' => 'navbar-nav navbar-right'],
         'items' => [
             ['label' => 'Главная', 'url' => ['/site/index']],
-            ['label' => 'Тест события встроенное в ActiveRecord', 'url' => ['/site/test']],
-            ['label' => 'Тест события пользовательское', 'url' => ['/site/test-new']],
+            ['label' => 'Test Roles', 'url' => ['/rbac/test']],
+            Yii::$app->user->isGuest ? (
+            ['label' => 'Login', 'url' => ['/site/login']]
+            ) : (
+                '<li>'
+                . Html::beginForm(['/site/logout'], 'post')
+                . Html::submitButton(
+                    'Logout (' . Yii::$app->user->identity->username . ')',
+                    ['class' => 'btn btn-link logout']
+                )
+                . Html::endForm()
+                . '</li>'
+            )
+
         ],
     ]);
     NavBar::end();
