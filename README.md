@@ -146,19 +146,19 @@ DbManager использует четыре таблицы для хранени
     
             // добавляем роль "author" и даём роли разрешение "createPost"
             $author = $auth->createRole('author');
-            $auth->add($author); // добавили запись в таблицу auth_item. (author) и в таблицу auth_roles
+            $auth->add($author); // добавили запись в таблицу auth_item. (author)
             $auth->addChild($author, $createPost); // добавили запись в таблицу auth_item_child.(author-createPost)
     
             // добавляем роль "admin" и даём роли разрешение "updatePost"
             // а также все разрешения роли "author"
             $admin = $auth->createRole('admin');
-            $auth->add($admin);
-            $auth->addChild($admin, $updatePost);
-            $auth->addChild($admin, $author); // админ копирует права автора
+            $auth->add($admin);// добавили запись в таблицу auth_item. (admin)
+            $auth->addChild($admin, $updatePost); // добавили запись в таблицу auth_item_child.(admin-updatePost)
+            $auth->addChild($admin, $author); // админ копирует права автора. Добавили запись в таблицу auth_item_child.(admin-author)
     
             // Назначение ролей пользователям. 1 и 2 это IDs возвращаемые IdentityInterface::getId()
             // обычно реализуемый в модели User.  В basic 100 и 101.
-            $auth->assign($author, 2); // вставка в таблицу auth_assignment
+            $auth->assign($author, 2); // вставка в таблицу auth_assignment. Это привязка к конкретному пользователю
             $auth->assign($admin, 1);
         }
     }
@@ -217,13 +217,13 @@ DbManager использует четыре таблицы для хранени
     
     // add the rule
     $rule = new \app\rbac\AuthorRule;
-    $auth->add($rule); //вставка
+    $auth->add($rule); //вставка в таблицу auth_rule
     
     // добавляем разрешение "updateOwnPost" и привязываем к нему правило.
     $updateOwnPost = $auth->createPermission('updateOwnPost');
     $updateOwnPost->description = 'Update own post';
-    $updateOwnPost->ruleName = $rule->name; //вставляем в поле rule_name - 'isAuthor' в запись 'updateOwnPost' 
-    $auth->add($updateOwnPost);
+    $updateOwnPost->ruleName = $rule->name;  
+    $auth->add($updateOwnPost);//вставляем в поле rule_name - 'isAuthor' в запись 'updateOwnPost'
     
     // "updateOwnPost" будет использоваться из "updatePost"
     $auth->addChild($updateOwnPost, $updatePost);
@@ -239,4 +239,14 @@ DbManager использует четыре таблицы для хранени
     
     
 ## Выводы:
-    
+   1) Сначала создаются все Разрешения типа updatePost, creatPost.
+   2) Создаются Роли типа admin, author, accountant. 
+   3) Разрешения и Роли находятся в одной таблице auth_item.
+   4) Привязываются Роль к Разрешению. Эти привязка Роль-Разрешение хранится в таблице auth_item_child.
+      Роль - может совпадать с именем пользователя но это не имя пользователя.
+   5) Привязывается Роль к ID конкретного пользователя в таблице auth_assignment.
+   6) В системе в дальнейшем работаем двумя способами:
+      6.1) Проверяем в ACF может ли пользовтель выполнять этот экшен в контроллере. 
+      6.2) Проверяем может ли текущий зарегистрированный пользователь выполнять это разрешение.
+      с помощью **\Yii::$app->user->can('createPost')**
+      
